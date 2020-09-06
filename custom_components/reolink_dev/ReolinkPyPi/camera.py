@@ -60,7 +60,7 @@ class ReolinkApi(object):
 
         for data in json_data:
             try:
-                if data["cmd"] == "GetDevInfo": 
+                if data["cmd"] == "GetDevInfo":
                     self._device_info = data
 
                 elif data["cmd"] == "GetNetPort":
@@ -68,7 +68,7 @@ class ReolinkApi(object):
                     self._rtspport = data["value"]["NetPort"]["rtspPort"]
                     self._rtmpport = data["value"]["NetPort"]["rtmpPort"]
 
-                elif data["cmd"] == "GetFtp": 
+                elif data["cmd"] == "GetFtp":
                     self._ftp_settings = data
                     if (data["value"]["Ftp"]["schedule"]["enable"] == 1):
                         self._ftp_state = True
@@ -81,7 +81,7 @@ class ReolinkApi(object):
                         self._email_state = True
                     else:
                         self._email_state = False
-                        
+
                 elif data["cmd"] == "GetIrLights":
                     self._ir_settings = data
                     if (data["value"]["IrLights"]["state"] == "Auto"):
@@ -106,7 +106,7 @@ class ReolinkApi(object):
                             _LOGGER.debug(f"Got preset {preset_name} with ID {preset_id}")
                         else:
                             _LOGGER.debug(f"Preset is not enabled: {preset}")
-                
+
                 elif data["cmd"] == "GetAlarm":
                     self._motion_detection_settings = data
                     self._pippo = data
@@ -115,12 +115,12 @@ class ReolinkApi(object):
                     else:
                         self._motion_detection_state = False
             except:
-                continue    
+                continue
 
     async def get_motion_state(self):
         body = [{"cmd": "GetMdState", "action": 0, "param":{"channel":self._channel}}]
         param = {"token": self._token}
-        
+
         response = await self.send(body, param)
 
         try:
@@ -132,7 +132,7 @@ class ReolinkApi(object):
                 return self._motion_state
 
             if json_data[0]["value"]["state"] == 1:
-                self._motion_state = True 
+                self._motion_state = True
                 self._last_motion = datetime.datetime.now()
             else:
                 self._motion_state = False
@@ -140,7 +140,7 @@ class ReolinkApi(object):
             self._motion_state = False
 
         return self._motion_state
-    
+
     @property
     async def still_image(self):
         response = await self.send(None, f"?cmd=Snap&channel={self._channel}&token={self._token}", stream=True)
@@ -202,7 +202,7 @@ class ReolinkApi(object):
     async def login(self, username, password):
         body = [{"cmd": "Login", "action": 0, "param": {"User": {"userName": username, "password": password}}}]
         param = {"cmd": "Login", "token": "null"}
-        
+
         response = await self.send(body, param)
 
         try:
@@ -355,11 +355,64 @@ class ReolinkApi(object):
             _LOGGER.error(f"Error translating Recording response to json")
             return False
 
+    async def goto_ptz_position(self, preset_name):
+        await self.get_settings()
+
+        if not self._ptzpresets:
+            _LOGGER.error("Error while fetching current ptzpresets settings")
+            return
+
+        if not self._ptzpresets[preset_name] :
+            _LOGGER.error("Error no preset with name {preset_name}")
+            return
+
+        newValue = int(self._ptzpresets[preset_name])
+
+        """Set move to pos cmd"""
+        speed = 32
+        body = [{"cmd":"PtzCtrl","action":0,"param": {"channel":self._channel,"op":"ToPos","speed":speed,"id":newValue} }]
+
+        response = await self.send(body, {"cmd": "PtzCtrl", "token": self._token} )
+        try:
+            json_data = json.loads(response)
+            if json_data[0]["value"]["rspCode"] == 200:
+                return True
+            else:
+                return False
+        except requests.exceptions.RequestException:
+            _LOGGER.error(f"Error translating PLZ Position response to json")
+            return False
+
+    async def control_ptz(self, command_ptz):
+        await self.get_settings()
+        # TODO check command_ptz
+        # example command_ptz: 'Right','Left','Up','Down','Stop','RightUp','RightDown','LeftUp','LeftDown','ZoomDec','ZoomInc','FocusDec','FocusInc','IrisInc','Auto'
+
+        """if not self._ptzpresets[preset_name] :
+            _LOGGER.error("Error no preset with name {preset_name}")
+            return"""
+
+        """TODO Improve speed, speed is a static magic number"""
+        speed = 32
+        body = [{"cmd":"PtzCtrl","action":0,"param": {"channel":self._channel,"op":command_ptz,"speed":speed} }]
+
+        response = await self.send(body, {"cmd": "PtzCtrl", "token": self._token} )
+        try:
+            json_data = json.loads(response)
+            # TODO Improve check, there is a error of no value
+            if json_data[0]["value"]["rspCode"] == 200:
+                return True
+            else:
+                return False
+        except requests.exceptions.RequestException:
+            _LOGGER.error(f"Error translating control of PLZ Camera response to json")
+            return False
+
     async def send(self, body, param, stream=False):
-        if (self._token is None and 
+        if (self._token is None and
             (body is None or body[0]["cmd"] != "Login")):
             _LOGGER.info(f"Reolink camera at IP {self._ip} is not logged in")
-            return   
+            return
 
         timeout = aiohttp.ClientTimeout(total=10)
 

@@ -19,6 +19,9 @@ STATE_MOTION = "motion"
 STATE_NO_MOTION = "no_motion"
 STATE_IDLE = "idle"
 
+ATTR_PRESET_NAME = "preset_name"
+ATTR_COMMAND_PTZ = "command_ptz"
+
 DEFAULT_NAME = "Reolink Camera"
 DEFAULT_STREAM = "main"
 DEFAULT_PROTOCOL = "rtmp"
@@ -37,6 +40,8 @@ SERVICE_ENABLE_RECORDING = 'enable_recording'
 SERVICE_DISABLE_RECORDING = 'disable_recording'
 SERVICE_ENABLE_MOTION_DETECTION = 'enable_motion_detection'
 SERVICE_DISABLE_MOTION_DETECTION = 'disable_motion_detection'
+SERVICE_GOTO_PTZ_POSITION = 'goto_ptz_position'
+SERVICE_CONTROL_PTZ= 'control_ptz'
 
 DEFAULT_BRAND = 'Reolink'
 DOMAIN_DATA = 'reolink_devices'
@@ -161,6 +166,29 @@ async def async_setup_platform(hass, config, async_add_devices, discovery_info=N
             entity.disable_motion_detection()
     hass.services.async_register(DOMAIN, SERVICE_DISABLE_MOTION_DETECTION, handler_disable_motion_detection)
 
+# Event move camera to preset position
+    def handler_goto_ptz_position(call):
+        component = hass.data.get(DOMAIN)
+        entity = component.get_entity(call.data.get(ATTR_ENTITY_ID))
+        # Read parameters
+        preset_name = call.data.get(ATTR_PRESET_NAME)
+
+        if entity and preset_name:
+            entity.goto_ptz_position(preset_name)
+
+    hass.services.async_register(DOMAIN, SERVICE_GOTO_PTZ_POSITION, handler_goto_ptz_position)
+
+# Event send ptz command to camera
+    def handler_control_ptz(call):
+        component = hass.data.get(DOMAIN)
+        entity = component.get_entity(call.data.get(ATTR_ENTITY_ID))
+        # Read parameters
+        command_ptz = call.data.get(ATTR_COMMAND_PTZ)
+
+        if entity and command_ptz:
+            entity.control_ptz(command_ptz)
+
+    hass.services.async_register(DOMAIN, SERVICE_CONTROL_PTZ, handler_control_ptz)
 
 class ReolinkCamera(Camera):
     """An implementation of a Reolink IP camera."""
@@ -200,7 +228,7 @@ class ReolinkCamera(Camera):
 
         if self._last_motion:
             attrs["last_motion"] = self._last_motion
-        
+
         if self._last_update:
             attrs["last_update"] = self._last_update
 
@@ -353,7 +381,17 @@ class ReolinkCamera(Camera):
         if asyncio.run_coroutine_threadsafe(self._reolinkSession.set_motion_detection(False), self.hass.loop).result():
             self._motion_detection_state = False
             self._hass.states.set(self.entity_id, self.state, self.state_attributes)
-    
+
+    def goto_ptz_position(self, preset_name):
+        """Move camera to a preset position."""
+        if asyncio.run_coroutine_threadsafe(self._reolinkSession.goto_ptz_position(preset_name), self.hass.loop).result():
+            self._hass.states.set(self.entity_id, self.state, self.state_attributes)
+
+    def control_ptz(self, command_ptz):
+        """Send a command to control ptz camera."""
+        if asyncio.run_coroutine_threadsafe(self._reolinkSession.control_ptz(command_ptz), self.hass.loop).result():
+            self._hass.states.set(self.entity_id, self.state, self.state_attributes)
+
     async def update_motion_state(self):
         await self._reolinkSession.get_motion_state()
 
@@ -362,7 +400,7 @@ class ReolinkCamera(Camera):
             self._last_motion = self._reolinkSession.last_motion
         else:
             self._state = STATE_NO_MOTION
-    
+
     async def update_status(self):
         await self._reolinkSession.get_settings()
 
@@ -383,7 +421,7 @@ class ReolinkCamera(Camera):
                 await self._reolinkSession.login(self._username, self._password)
             else:
                 return
-        
+
         if not self._reolinkSession.session_active():
             _LOGGER.error(f"Failed to reconnect with Reolink at IP {self._host}. Retrying in 60 seconds.")
             self._last_update = datetime.datetime.now()

@@ -4,49 +4,49 @@ enable_ftp:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 disable_ftp:
   description: Disable FTP upload on motion recording.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 enable_email:
   description: Enable email functionality on motion detection.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 disable_email:
   description: Disable email functionality on motion detection.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 enable_ir_lights:
   description: Enable the infrared lights (nightvision) of the Reolink camera.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 disable_ir_lights:
   description: Disable the infrared lights (nightvision) of the Reolink camera.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 enable_recording:
   description: Enable the motion recording of the Reolink camera.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 disable_recording:
   description: Disable the motion recording of the Reolink camera.
   fields:
@@ -60,10 +60,38 @@ enable_motion_detection:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
-      
+
 disable_motion_detection:
   description: Disable the motion detection of the Reolink camera.
   fields:
     entity_id:
       description: Name of the Reolink camera entity to set.
       example: 'camera.frontdoor'
+
+
+goto_ptz_position:
+  description: Move the Reolink camera to a preset position.
+  fields:
+    entity_id:
+      description: Name of the Reolink camera entity to set.
+      example: 'camera.frontdoor'
+    preset_name:
+      description: Name of the preset position to move camera.
+      example: 'door'
+
+control_ptz:
+  description: Send a command to control a Reolink ptz camera.
+  fields:
+    entity_id:
+      description: Name of the Reolink camera entity to set.
+      example: 'camera.frontdoor'
+    command_ptz:
+      description: Command to control PTZ camera.
+      example: 'Right','Left','Up','Down','Stop','RightUp','RightDown','LeftUp','LeftDown','ZoomDec','ZoomInc','FocusDec','FocusInc','IrisInc','Auto'
+
+      #{channel: 0, op: "StartPatrol", id: 1}
+      #StopPatrol
+
+
+      #[{"cmd":"SetPtzPatrol","action":0,"param":{"PtzPatrol":{"channel":0,"enable":1,"id":1,"preset":[{"dwellTime":1,"id":1,"speed":6},{"dwellTime":1,"id":1,"speed":6},{"dwellTime":1,"id":6,"speed":6},{"dwellTime":1,"id":6,"speed":6},{"dwellTime":1,"id":2,"speed":6},{"dwellTime":1,"id":2,"speed":6},{"dwellTime":1,"id":3,"speed":6},{"dwellTime":1,"id":3,"speed":6},{"dwellTime":1,"id":4,"speed":6},{"dwellTime":1,"id":4,"speed":6}],"running":0}}}]
+      #[{"cmd":"SetIsp","action":0,"param":{"Isp":{"channel":0,"antiFlicker":"Outdoor","exposure":"Auto","gain":{"min":1,"max":30},"shutter":{"min":0,"max":83},"blueGain":128,"redGain":128,"whiteBalance":"Auto","dayNight":"Color","backLight":"DynamicRangeControl","blc":128,"drc":128,"rotation":0,"mirroring":0,"nr3d":1}}}]
