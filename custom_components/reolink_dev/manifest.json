@@ -4,5 +4,6 @@
     "documentation": "https://github.com/fwestenberg/reolink",
     "issue_tracker": "https://github.com/fwestenberg/reolink/issues",
     "dependencies": ["ffmpeg"],
-    "codeowners": ["@fwestenberg"]
+    "codeowners": ["@fwestenberg"],
+    "version": "0.1.0"
   }
